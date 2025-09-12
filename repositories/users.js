@@ -1,57 +1,12 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const util = require("util");
+const Repository = require('./repository')
 
 const scrypt = util.promisify(crypto.scrypt);
 
 
-class UserRepository {
-    //check a filename is given to save user
-    //Throw error if no file name
-    constructor(filename){
-        if(!filename) {
-            throw new Error('Creating a repo requires a filename')
-        }
-        //use fs.access function
-        //callback version
-        //promise version
-        //sync function -no callback
-        //Node will just check
-        //Not good for perfomance
-        //Constructors are not allowed to be async
-        //We can use this beacuse we will only have 1 repository
-        this.filename = filename;
-        try {
-            fs.accessSync(this.filename);
-        } catch (err) {
-            //write file function
-            fs.writeFileSync(this.filename, "[]");
-        }  
-    }
-
-    async getAll() {
-        //open the file called this.filename
-        //use the promise based function
-        //The option object is optional
-        return JSON.parse(
-            await fs.promises.readFile(this.filename, {
-            encoding: 'utf8'
-        }));
-
-        //read its contents
-        //console.log(contents)
-
-        //parse the contents
-        //Store as JSON
-        //Make sure the array is not a string
-        //const data = JSON.parse(contents);
-
-        //return parsed data
-        //return data;
-
-        //Create User
-    }
-
+class UserRepository extends Repository {
     async create(attrs) {
         attrs.id = this.randomId();
 
@@ -86,78 +41,22 @@ class UserRepository {
         return record;
         }
 
-    async comparePasswords(saved, supplied) {
-        //saved => password saved in our database
-        //supplied => pw given by user trying to login
-        // const result = saved.split('.');
-        // const hashed = result[0];
-        // const salt = result[1];
-
-        //Grab the results from the array
-        const [ hashed, salt ] = saved.split('.');
-        const hashedSuppliedBuffer = await scrypt(supplied, salt, 64);
-
-        //lets compare
-        return hashed === hashedSuppliedBuffer.toString("hex")
-    }
-
-    async writeAll(records){
-        await fs.promises.writeFile(
-            this.filename, 
-            JSON.stringify(records, null, 2)
-            );
+        async comparePasswords(saved, supplied) {
+            //saved => password saved in our database
+            //supplied => pw given by user trying to login
+            // const result = saved.split('.');
+            // const hashed = result[0];
+            // const salt = result[1];
+    
+            //Grab the results from the array
+            const [ hashed, salt ] = saved.split('.');
+            const hashedSuppliedBuffer = await scrypt(supplied, salt, 64);
+    
+            //lets compare
+            return hashed === hashedSuppliedBuffer.toString("hex")
         }
+    
 
-    randomId(){
-         return crypto.randomBytes(4).toString('hex');
-    }
-
-    async getOne(id){
-        const records = await this.getAll();
-        return records.find(record => record.id === id);
-    }
-
-    async delete(id){
-        const records = await this.getAll();
-        const filteredRecords =  records.filter(record => record.id !== id);
-        await this.writeAll(filteredRecords);
-
-    }
-
-    //update
-    async update(id, attrs) {
-        const records = await this.getAll();
-        const record = records.find(record => record.id === record.id);
-        //If this does not exist then something is very wrong!
-        if(!record) {
-            throw new Error(`Record with id ${id} not found`);
-        }
-        //object assign take all the properties and copys the key and value to attrs
-        Object.assign(record, attrs);
-        await this.writeAll(records);
-    }
-
-    //getoneby
-    async getOneBy(filters){
-        //use filters object
-        //get all records
-        const records = await this.getAll();
-        
-        //Use a for of loop of an array
-        for (let record of records) {
-            let found = true;
-            
-            //inner loop is for of because we are looking at object
-            for (let key in filters){
-                if(record[key] !== filters[key]){
-                    found = false;
-                }
-            }
-        if (found){
-            return record;
-        }
-        }
-    }
 }
             
     
