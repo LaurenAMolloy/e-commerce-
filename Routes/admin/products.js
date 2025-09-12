@@ -4,17 +4,18 @@ const express = require("express");
 const { validationResult } = require('express-validator');
 const multer = require('multer');
 
-const { handleErrors } = require('./middleware')
+const { handleErrors, requireAuth } = require('./middleware')
 const productsRepo = require('../../repositories/products');
 const productsNewTemplate = require('../../views/admin/products/new');
-const productsIndexTemplate = require('../../views/admin/products/index')
+const productsIndexTemplate = require('../../views/admin/products/index');
+const productsEditTemplate = require('../../views/admin/products/edit');
 const { requireTitle, requirePrice } = require('./validators');
 
 const router = express.Router();
 const upload = multer( { storage: multer.memoryStorage() })
 
 //products
-router.get('/admin/products', async (req, res) => {
+router.get('/admin/products', requireAuth, async (req, res) => {
 //find all products
     const products = await productsRepo.getAll();
 //render
@@ -24,16 +25,19 @@ router.get('/admin/products', async (req, res) => {
 });
 
 //form
-router.get('/admin/products/new', (req, res) => {
+router.get('/admin/products/new', requireAuth, (req, res) => {
+    
     res.send(productsNewTemplate({}));
 });
 
 //submit form
 router.post('/admin/products/new',
+ requireAuth,
  upload.single("image"),
  [ requireTitle, requirePrice], 
  handleErrors(productsNewTemplate),
  async (req, res) => {
+   
     const errors = validationResult(req);
     //console.log(req.body);
 
@@ -49,9 +53,27 @@ router.post('/admin/products/new',
     //Create inside products repo
     await productsRepo.create({ title, price, image });
 
-    res.send("Submitted");
+    res.redirect('/admin/products');
 })
 //submit and edit
 //delete
+router.get('/admin/products/:id/edit', requireAuth, async (req, res) => {
+    console.log(req.params.id);
+    //get access to products repo
+    const product = await productsRepo.getOne(req.params.id)
+    //Error?
+    if(!product) {
+        res.send('Product not found');
+    }
+
+    res.send(productsEditTemplate( { product }));
+});
+
+// router.post('/admin/products/:/id/edit', requireAuth,  async (req, res) => {
+//     //upload
+//     //validators
+//     //errors!
+
+// });
 
 module.exports = router;

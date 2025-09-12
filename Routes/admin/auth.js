@@ -69,7 +69,7 @@ async (req, res) => {
    //Added by cookie session
    req.session.userId = user.id;
     
-    res.send('Account Created')
+    res.redirect('/admin/products');
 })
 
 //Listen at port 3000 
@@ -93,7 +93,7 @@ router.get('/signin', (req, res) => {
 
 router.post(
     '/signin', 
-    [requireEmailExist,requireValidPasswordForUser],
+    [requireEmailExist, requireValidPasswordForUser],
     handleErrors(signinTemplate),
     async(req, res) => {
     
@@ -102,7 +102,7 @@ router.post(
     const user = await usersRepo.getOneBy({ email });
 
     req.session.userId = user.id;
-    res.send("You are signed in");
+    res.redirect('admin/products')
 });
 
 module.exports = router;

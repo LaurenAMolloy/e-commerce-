@@ -14,5 +14,13 @@ module.exports = {
             //call the next middleware or routehandler
             next();
         };
+    },
+    //No customisation required
+    requireAuth(req, res, next) {
+        if(!req.session.userId){
+            return res.redirect('/signin');
+        }
+
+        next();
     }
 };
